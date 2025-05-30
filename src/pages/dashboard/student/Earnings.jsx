@@ -71,7 +71,7 @@ const Earnings = () => {
       : earningsData.transactions.filter((txn) => txn.month === selectedMonth);
 
   return (
-    <div className="p-6">
+    <div className="">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4"> {/* Adjusted spacing and alignment */}
         <h2
           className="text-4xl font-extrabold" // Increased font size and boldness

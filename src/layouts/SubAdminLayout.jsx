@@ -1,5 +1,5 @@
-import React from "react";
-import { NavLink, Outlet } from "react-router-dom";
+import React, { useEffect } from "react"; // Import useEffect
+import { NavLink, Outlet, useNavigate } from "react-router-dom"; // Import useNavigate
 import Navbar from "../components/Navbar";
 
 // Gradient style for active text
@@ -19,6 +19,22 @@ const activeClass =
   "font-bold relative before:absolute before:inset-y-0 before:left-0 before:w-1 before:bg-gradient-to-r before:from-[#6A67FE] before:to-[#FE67F6] before:rounded-r-full pl-4";
 
 const SubAdminLayout = () => {
+  const navigate = useNavigate(); // Initialize useNavigate hook
+
+  // Authentication check effect
+  useEffect(() => {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      // If no auth token, redirect to login page
+      navigate('/auth');
+    }
+    // Optional: You might also want to check userRole here if only specific roles can access this layout
+    // const userRole = localStorage.getItem('userRole');
+    // if (userRole !== 'subadmin') {
+    //   navigate('/auth'); // Or to a forbidden page, depending on your app's logic
+    // }
+  }, [navigate]); // Add navigate to dependency array
+
   return (
     <>
     <Navbar/>

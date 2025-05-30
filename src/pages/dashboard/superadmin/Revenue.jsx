@@ -99,7 +99,7 @@ const Revenue = () => {
 
   return (
     <motion.div
-      className="p-8" // Consistent padding for the overall page content
+      className="" // Consistent padding for the overall page content
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}

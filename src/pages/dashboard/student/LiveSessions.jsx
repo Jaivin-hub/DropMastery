@@ -36,7 +36,7 @@ const LiveSessions = () => {
   const [showModal, setShowModal] = useState(false);
 
   return (
-    <div className="p-6">
+    <div className="">
       <div className="flex justify-between items-center mb-6"> {/* Increased mb */}
         {/* Apply gradient to the main heading */}
         <h2

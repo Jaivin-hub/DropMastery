@@ -120,7 +120,7 @@ const MentorApproval = () => {
   };
 
   return (
-    <div className="p-6">
+    <div className="">
       {/* Main Heading with Gradient */}
       <motion.h2
         className="text-4xl font-extrabold mb-8 flex items-center gap-4" // Larger font, increased gap

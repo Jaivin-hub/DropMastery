@@ -1,5 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion"; // Import motion for animations
+import { Link } from "react-router-dom"; 
 
 // Define common dark background colors (reusing from other components)
 const darkBgPrimary = "#121212"; // Primary dark background
@@ -14,7 +15,7 @@ const Footer = () => {
       transition={{ duration: 0.5, delay: 0.3 }}
     >
       <div className="mb-3"> {/* Adjusted margin for spacing */}
-        <a href="#" className="mx-3 text-gray-300 hover:text-purple-400 transition duration-200">Contact</a> {/* Adjusted link colors */}
+        <Link to="/contactus" className="mx-3 text-gray-300 hover:text-purple-400 transition duration-200">Contact</Link> {/* Adjusted link colors */}
         <a href="#" className="mx-3 text-gray-300 hover:text-purple-400 transition duration-200">FAQ</a>
         <a href="#" className="mx-3 text-gray-300 hover:text-purple-400 transition duration-200">Legal</a>
       </div>

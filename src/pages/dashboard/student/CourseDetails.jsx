@@ -1,101 +1,250 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useParams } from "react-router-dom"; // Import useParams
 
 // Define a common style object for gradient text
 const gradientTextStyle = {
-  background: 'linear-gradient(to right, #6A67FE, #FE67F6)', // Gradient from the image
+  background: 'linear-gradient(to right, #6A67FE, #FE67F6)',
   WebkitBackgroundClip: 'text',
   WebkitTextFillColor: 'transparent',
   backgroundClip: 'text',
-  color: 'transparent', // Fallback
+  color: 'transparent',
 };
 
 // Define a common dark background color for cards/sections
-const darkBgColor = "#1E1E1E"; // Consistent with DashboardHome, MyMentor, etc.
-const darkBgColorLighter = "#222222"; // Slightly lighter for internal elements
-
-const sampleLessons = [
-  { id: 1, title: "1. Introduction to Dropshipping", videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=1" }, // Using a sample YouTube embed
-  { id: 2, title: "2. Finding Winning Products", videoUrl: "https://www.youtube.com/embed/K7qg2xXyYtE" },
-  { id: 3, title: "3. Setting Up Your Store", videoUrl: "https://www.youtube.com/embed/n_dV3W1910A" },
-  { id: 4, title: "4. Facebook Ads Mastery", videoUrl: "https://www.youtube.com/embed/bM74f6_jL-I" },
-  { id: 5, title: "5. Scaling Your Business", videoUrl: "https://www.youtube.com/embed/3vG0rB_iRkY" },
-];
+const darkBgColor = "#1E1E1E";
+const darkBgColorLighter = "#222222";
 
 const CourseDetails = () => {
-  const [activeLesson, setActiveLesson] = useState(sampleLessons[0]);
+  const { courseId } = useParams(); // Get courseId from URL parameters
+  const [course, setCourse] = useState(null); // State to store the fetched course details
+  const [activeLesson, setActiveLesson] = useState(null); // State for the currently active lesson
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch course details when component mounts or courseId changes
+  useEffect(() => {
+    const fetchCourseDetails = async () => {
+      try {
+        const response = await fetch(`/api/courses/${courseId}`); // API call to get single course
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setCourse(data.course); // Set the fetched course
+        if (data.course && data.course.lessons && data.course.lessons.length > 0) {
+          setActiveLesson(data.course.lessons[0]); // Set the first lesson as active initially
+        }
+      } catch (err) {
+        console.error("Failed to fetch course details:", err);
+        setError("Failed to load course details. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (courseId) {
+      fetchCourseDetails();
+    }
+  }, [courseId]); // Re-run effect if courseId changes
+
+  // Component to render different content types (updated for 'image')
+  const renderContent = (contentBlock, index) => {
+    switch (contentBlock.type) {
+      case "paragraph":
+        return <p key={index} className="text-gray-300 mb-4">{contentBlock.text}</p>;
+      case "heading":
+        const headingSize = {
+          1: 'text-4xl', 2: 'text-3xl', 3: 'text-2xl', 4: 'text-xl', 5: 'text-lg', 6: 'text-base',
+        }[contentBlock.level] || 'text-xl';
+        const HeadingTag = `h${contentBlock.level}`;
+        return <HeadingTag key={index} className={`${headingSize} font-bold text-gray-200 mt-6 mb-3`}>{contentBlock.text}</HeadingTag>;
+      case "list":
+        return (
+          <ul key={index} className="list-disc list-inside text-gray-300 mb-4 space-y-1">
+            {contentBlock?.items?.map((item, i) => (
+              <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
+            ))}
+          </ul>
+        );
+      case "ordered-list":
+        return (
+          <ol key={index} className="list-decimal list-inside text-gray-300 mb-4 space-y-1">
+            {contentBlock?.items?.map((item, i) => (
+              <li key={i} dangerouslySetInnerHTML={{ __html: item }} />
+            ))}
+          </ol>
+        );
+      case "code":
+        return (
+          <pre key={index} className="bg-gray-800 p-4 rounded-lg text-sm text-gray-200 overflow-x-auto mb-4">
+            <code className={`language-${contentBlock.language}`}>
+              {contentBlock.code}
+            </code>
+          </pre>
+        );
+      case "download": // Added download type rendering
+        return (
+          <div key={index} className="mb-4">
+            <a
+              href={contentBlock.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300"
+            >
+              Download: {contentBlock.label || 'File'}
+            </a>
+          </div>
+        );
+      case "call-to-action": // Added call-to-action type rendering
+        return (
+          <div key={index} className="mb-4 text-center">
+            <p className="text-gray-300 mb-2">{contentBlock.text}</p>
+            <a
+              href={contentBlock.buttonLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 transition duration-300"
+            >
+              {contentBlock.buttonText || 'Learn More'}
+            </a>
+          </div>
+        );
+      case "image": // ADDED IMAGE TYPE RENDERING
+        return (
+          <div key={index} className="my-6">
+            <img
+              src={contentBlock.imageUrl}
+              alt="Lesson content image"
+              className="w-full h-auto rounded-lg shadow-md"
+            />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-8 text-center text-gray-400">
+        <p className="text-lg">Loading course details...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-8 text-center text-red-500">
+        <p className="text-lg">{error}</p>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="p-8 text-center text-gray-400">
+        <p className="text-lg">Course not found.</p>
+      </div>
+    );
+  }
+
+  // If course is loaded but has no lessons
+  if (!course.lessons || course.lessons.length === 0) {
+    return (
+      <div className="p-8 text-center text-gray-400">
+        <h1 className="text-4xl font-extrabold mb-5" style={gradientTextStyle}>{course.title}</h1>
+        <p className="text-lg">This course has no lessons yet.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
-      {/* Apply gradient to the main course title */}
       <h1
-        className="text-4xl font-extrabold mb-5" // Increased font size and boldness
+        className="text-4xl font-extrabold mb-5"
         style={gradientTextStyle}
       >
-        Master Dropshipping with Sarah Lee
+        {course.title}
       </h1>
-      <p className="text-gray-300 mb-8"> {/* Adjusted text color for dark background */}
-        Learn from a top mentor how to set up a profitable eCommerce business from scratch.
+      <p className="text-gray-300 mb-8">
+        {course.description}
+        {course.mentors && course.mentors.length > 0 && (
+          <span className="ml-2">
+            Taught by:{" "}
+            <span className="font-medium text-purple-300">
+              {course.mentors.map(m => m.name).join(', ')}
+            </span>
+          </span>
+        )}
       </p>
 
-      {/* Layout */}
-      <div className="flex flex-col lg:flex-row gap-8"> {/* Increased gap */}
-        {/* Video Section */}
+      <div className="flex flex-col lg:flex-row gap-8">
         <motion.div
-          key={activeLesson.id}
+          key={activeLesson?._id || 'no-lesson'} // Use activeLesson._id for key
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="flex-1"
         >
-          <div
-            className="aspect-video w-full rounded-xl overflow-hidden shadow-lg shadow-black/70 border border-[#222222]" // Consistent border, shadow, increased roundness
-            style={{ backgroundColor: 'black' }} // Background for iframe area
-          >
-            <iframe
-              src={activeLesson.videoUrl}
-              title={activeLesson.title}
-              className="w-full h-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            ></iframe>
-          </div>
-          {/* Apply gradient to the active lesson title below the video */}
-          <h2
-            className="text-2xl font-bold mt-6" // Increased font size, boldness, margin
-            style={gradientTextStyle}
-          >
-            {activeLesson.title}
-          </h2>
+          {activeLesson && (
+            <>
+              <div
+                className="aspect-video w-full rounded-xl overflow-hidden shadow-lg shadow-black/70 border border-[#222222]"
+                style={{ backgroundColor: 'black' }}
+              >
+                {/* Use the activeLesson.videoUrl */}
+                <iframe
+                  src={activeLesson.videoUrl}
+                  title={activeLesson.title}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              </div>
+              <h2
+                className="text-2xl font-bold mt-6"
+                style={gradientTextStyle}
+              >
+                {activeLesson.title}
+              </h2>
+              <div className="mt-6 p-6 rounded-xl shadow-lg shadow-black/70 border border-[#222222]" style={{ backgroundColor: darkBgColor }}>
+                {activeLesson?.content?.map((block, index) => renderContent(block, index))}
+              </div>
+            </>
+          )}
+          {!activeLesson && (
+            <div className="p-6 text-center text-gray-400">
+              No lesson selected or available for this course.
+            </div>
+          )}
         </motion.div>
 
-        {/* Lesson List */}
         <div
-          className="lg:w-1/3 p-5 rounded-xl shadow-lg shadow-black/70 border border-[#222222]" // Added padding, roundness, shadow, border
-          style={{ backgroundColor: darkBgColor }} // Dark background for the list container
+          className="lg:w-1/3 p-5 rounded-xl shadow-lg shadow-black/70 border border-[#222222]"
+          style={{ backgroundColor: darkBgColor }}
         >
-          {/* Apply gradient to "Lessons" heading */}
           <h3
-            className="text-xl font-bold mb-4" // Increased font size and margin
+            className="text-xl font-bold mb-4"
             style={gradientTextStyle}
           >
             Lessons
           </h3>
-          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-3 custom-scrollbar"> {/* Increased space-y, added custom-scrollbar class for styling */}
-            {sampleLessons.map((lesson) => (
+          <div className="space-y-3 max-h-[400px] overflow-y-auto pr-3 custom-scrollbar">
+            {course.lessons.map((lesson) => (
               <motion.button
-                key={lesson.id}
+                key={lesson._id} // Use lesson._id as key
                 onClick={() => setActiveLesson(lesson)}
                 className={`
                   w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 ease-in-out
-                  ${activeLesson.id === lesson.id
-                      ? "border-l-4 border-purple-500 bg-purple-900/30" // Active: purple border, subtle dark purple background
-                      : "bg-[#222222] hover:bg-[#2A2A2A]" // Inactive: dark background, subtle hover
+                  ${activeLesson && activeLesson._id === lesson._id
+                    ? "border-l-4 border-purple-500 bg-purple-900/30"
+                    : "bg-[#222222] hover:bg-[#2A2A2A]"
                   }
-                  ${activeLesson.id === lesson.id ? 'text-transparent' : 'text-gray-300'} // Apply gradient text only if active
+                  ${activeLesson && activeLesson._id === lesson._id ? 'text-transparent' : 'text-gray-300'}
                 `}
-                style={activeLesson.id === lesson.id ? gradientTextStyle : null} // Conditionally apply gradient text
-                whileHover={{ x: activeLesson.id === lesson.id ? 0 : 5 }} // Subtle slide on hover for inactive
+                style={activeLesson && activeLesson._id === lesson._id ? gradientTextStyle : null}
+                whileHover={{ x: activeLesson && activeLesson._id === lesson._id ? 0 : 5 }}
               >
                 {lesson.title}
               </motion.button>
@@ -103,6 +252,22 @@ const CourseDetails = () => {
           </div>
         </div>
       </div>
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: ${darkBgColorLighter};
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #888;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #555;
+        }
+      `}</style>
     </div>
   );
 };
